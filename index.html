@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>استبيان مهمة | دائرة النقليات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600&family=Noto+Kufi+Arabic:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F3F6F4;color:#17261F;font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-size:17px;line-height:1.7;-webkit-text-size-adjust:100%}
+.top{background:#0B5D45;color:#fff;border-bottom:4px solid #B8912F;padding:14px 18px;font-weight:600}
+main{max-width:520px;margin:auto;padding:16px}
+.card{background:#fff;border:1px solid #D5DFDA;border-radius:12px;padding:18px;margin-bottom:14px}
+.cap{color:#5B6A63;font-size:.9rem}
+h1,h2{font-family:'Noto Kufi Arabic','Segoe UI',Tahoma,sans-serif;color:#07402F;margin:4px 0 10px;line-height:1.4}
+h1{font-size:1.4rem}h2{font-size:1.15rem}
+dl{margin:0;display:grid;gap:4px}
+dl div{display:flex;gap:8px}
+dt{color:#5B6A63;min-width:104px}
+dd{margin:0;font-weight:600}
+.det{white-space:pre-line;margin:10px 0 0;padding-top:10px;border-top:1px solid #D5DFDA}
+label{font-weight:600;display:block}
+input{width:100%;margin-top:6px;font:inherit;font-size:1.3rem;padding:10px 12px;border:1px solid #D5DFDA;border-radius:8px;text-align:center;letter-spacing:2px;background:#fff;color:#17261F}
+input:focus{outline:none;border-color:#0B5D45;box-shadow:0 0 0 3px #E7F0EC}
+.q{font-weight:600;margin:16px 0 8px}
+.btns{display:grid;gap:10px}
+button{font:inherit;font-weight:600;padding:13px;border-radius:9px;cursor:pointer;border:1px solid #0B5D45;-webkit-appearance:none;appearance:none}
+.yes{background:#0B5D45;color:#fff}
+.no{background:#fff;color:#A3392C;border-color:#E2C3BE}
+button:disabled{opacity:.55}
+.err{color:#A3392C;min-height:1.5em;margin:10px 0 0}
+.done{text-align:center;border-inline-start:6px solid #B8912F}
+.ghost{background:#fff;color:#07402F;border-color:#D5DFDA;margin-top:8px;padding:8px 18px}
+.muted{color:#5B6A63}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="top">دائرة النقليات، جامعة السلطان قابوس</div>
+<main>
+  <div class="card done" id="loading"><p class="muted" style="margin:0">جارٍ تحميل الاستبيان...</p></div>
+
+  <div class="card done" id="fail" hidden>
+    <h2 id="failh">تعذّر تحميل الاستبيان</h2>
+    <p id="failp" class="muted">تحقق من اتصال الإنترنت ثم أعد المحاولة.</p>
+    <button class="ghost" id="retry" onclick="load()">إعادة المحاولة</button>
+  </div>
+
+  <div id="page" hidden>
+    <div class="card">
+      <div class="cap" id="list"></div>
+      <h1 id="title"></h1>
+      <dl id="facts"></dl>
+      <p class="det" id="details" hidden></p>
+    </div>
+
+    <div class="card done" id="closed" hidden>
+      <h2>انتهى الاستبيان</h2>
+      <p class="muted" style="margin:0">لم يعد استقبال الردود متاحاً.</p>
+    </div>
+
+    <div class="card" id="form" hidden>
+      <label for="emp">الرقم الوظيفي</label>
+      <input id="emp" inputmode="numeric" autocomplete="off">
+      <p class="q">هل أنت مستعد لتولي هذه المهمة؟</p>
+      <div class="btns">
+        <button class="yes" onclick="send('نعم')">نعم، مستعد</button>
+        <button class="no" onclick="send('لا')">لا، أعتذر</button>
+      </div>
+      <p class="err" id="err" role="alert"></p>
+    </div>
+
+    <div class="card done" id="ok" hidden>
+      <h2 id="okh"></h2>
+      <p id="okp"></p>
+      <button class="ghost" onclick="again()">تعديل الرد</button>
+    </div>
+  </div>
+</main>
+
+<script>
+/* رابط خادم الاستبيانات (Apps Script). غيّره فقط إذا تغيّر رابط النشر. */
+var API = 'https://script.google.com/macros/s/AKfycbzyO2GUuVLtUH0N_4T00i5gGtEH-hWeKGnH1gIokdQqQ314rhmQaf5Aa_vcatzn5zGo/exec';
+
+var SID = new URLSearchParams(location.search).get('s') || '';
+function el(id){ return document.getElementById(id); }
+function show(id, on){ el(id).hidden = !on; }
+
+function fail(h, p, canRetry){
+  show('loading', false); show('page', false); show('fail', true);
+  el('failh').textContent = h; el('failp').textContent = p; show('retry', canRetry);
+}
+
+function load(){
+  show('fail', false); show('loading', true);
+  if(!SID) return fail('الرابط غير صالح', 'تأكد من الرابط المرسل في المجموعة.', false);
+  fetch(API + '?action=survey&s=' + encodeURIComponent(SID), { credentials: 'omit' })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(!j.ok) return fail('الرابط غير صالح', 'قد يكون الاستبيان حُذف. تأكد من الرابط المرسل في المجموعة.', false);
+      render(j.survey);
+    })
+    .catch(function(){ fail('تعذّر تحميل الاستبيان', 'تحقق من اتصال الإنترنت ثم أعد المحاولة.', true); });
+}
+
+function render(s){
+  document.title = s.title + ' | دائرة النقليات';
+  el('list').textContent = 'استبيان مهمة، كشف ' + (s.list || '');
+  el('title').textContent = s.title;
+  var facts = [['التاريخ', s.date], ['المكان', s.place], ['عدد السائقين', s.needed], ['آخر موعد للرد', s.deadline]];
+  el('facts').innerHTML = '';
+  facts.forEach(function(f){
+    if(!f[1]) return;
+    var d = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = f[0]; dd.textContent = f[1];
+    d.appendChild(dt); d.appendChild(dd); el('facts').appendChild(d);
+  });
+  el('details').textContent = s.details || '';
+  show('details', !!s.details);
+  show('closed', s.closed); show('form', !s.closed);
+  show('loading', false); show('page', true);
+}
+
+function busy(b){ document.querySelectorAll('.btns button').forEach(function(x){ x.disabled = b; }); }
+
+function send(a){
+  var emp = el('emp').value.trim();
+  el('err').textContent = '';
+  if(!emp){ el('err').textContent = 'اكتب رقمك الوظيفي أولاً'; el('emp').focus(); return; }
+  busy(true);
+  fetch(API, {
+    method: 'POST', credentials: 'omit',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'submit', s: SID, emp: emp, answer: a })
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      busy(false);
+      if(!j.ok){
+        el('err').textContent = j.error || 'تعذّر تسجيل الرد';
+        if(/انتهى/.test(j.error || '')){ show('form', false); show('closed', true); }
+        return;
+      }
+      show('form', false); show('ok', true);
+      el('okh').textContent = 'شكراً ' + j.name;
+      el('okp').textContent = a === 'نعم'
+        ? 'سُجل استعدادك. الإسناد حسب الأولوية في كشف الدور، وسيتم التواصل معك عند اختيارك.'
+        : 'سُجل اعتذارك عن هذه المهمة.';
+    })
+    .catch(function(){ busy(false); el('err').textContent = 'تعذّر الإرسال. تحقق من اتصال الإنترنت ثم أعد المحاولة.'; });
+}
+
+function again(){ show('ok', false); show('form', true); }
+
+load();
+</script>
+</body>
+</html>
