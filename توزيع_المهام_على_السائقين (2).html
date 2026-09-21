@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>دور السائقين في المهمات | دائرة النقليات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Noto+Kufi+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --green:#0B5D45; --green-dk:#07402F; --green-soft:#E7F0EC;
+  --gold:#B8912F; --gold-soft:#F5EEDB;
+  --bg:#F3F6F4; --surface:#FFFFFF; --ink:#17261F; --muted:#5B6A63; --line:#D5DFDA;
+  --red:#A3392C; --red-soft:#F7E7E4;
+  --head:'Noto Kufi Arabic','Segoe UI',Tahoma,sans-serif;
+  --body:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6}
+h1,h2,h3{font-family:var(--head);margin:0;line-height:1.35}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+.top{background:var(--green);color:#fff;border-bottom:4px solid var(--gold)}
+.top-in{max-width:1100px;margin:auto;padding:18px 20px 0}
+.top h1{font-size:1.4rem}
+.tabs{display:flex;gap:4px;margin-top:12px;overflow-x:auto}
+.tab{background:transparent;border:0;color:#D7E8E0;padding:10px 20px;border-radius:8px 8px 0 0;cursor:pointer;font-weight:500;white-space:nowrap}
+.tab:hover{color:#fff;background:rgba(255,255,255,.08)}
+.tab[aria-selected="true"]{background:var(--bg);color:var(--green-dk);font-weight:600}
+
+main{max-width:1100px;margin:auto;padding:22px 20px 60px}
+.panel{display:none}.panel.on{display:block}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.stack > * + *{margin-top:18px}
+.note{font-size:.85rem;color:var(--muted);margin:6px 0 0}
+
+/* الجهات */
+.lists{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:22px;padding:7px 16px;cursor:pointer;font-weight:500}
+.chip:hover{border-color:var(--green)}
+.chip[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.chip.add{border-style:dashed;color:var(--green-dk)}
+
+/* بطاقة الدور */
+.turn{background:var(--surface);border:1px solid var(--line);border-inline-start:6px solid var(--gold);border-radius:12px;padding:24px 26px}
+.turn .cap{color:var(--muted)}
+.turn .who{font-family:var(--head);font-size:2.2rem;font-weight:700;color:var(--green-dk);margin:2px 0}
+.turn .id{color:var(--muted);font-size:.95rem}
+.paper{display:inline-block;margin-top:8px;background:var(--gold-soft);border:1px solid #E3D3A6;color:#6E5415;border-radius:6px;padding:2px 10px;font-size:.85rem}
+.form{display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;margin:20px 0 16px}
+@media (max-width:700px){.form{grid-template-columns:1fr 1fr}.form .wide{grid-column:1/-1}.turn .who{font-size:1.7rem}}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],input[type=date],input[type=datetime-local],input[type=month],input[type=search],select,textarea{
+  border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:#fff;color:var(--ink);font-size:.95rem;width:100%;min-width:0}
+textarea{resize:vertical;min-height:70px;line-height:1.7}
+input:focus,select:focus,textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 3px var(--green-soft)}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.btn{border:1px solid var(--green);background:var(--green);color:#fff;padding:9px 18px;border-radius:7px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--green-dk)}
+.btn.big{padding:11px 28px;font-size:1.05rem}
+.btn.ghost{background:#fff;color:var(--green-dk);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--green);background:var(--green-soft)}
+.btn.warn{background:#fff;color:var(--red);border-color:#E2C3BE}
+.btn.warn:hover{background:var(--red-soft)}
+.btn.sm{padding:3px 10px;font-size:.85rem}
+
+.after{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted)}
+.after ol{margin:4px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px 22px;counter-reset:q}
+.after li{color:var(--ink);counter-increment:q}
+.after li::before{content:counter(q) ". ";color:var(--muted)}
+
+.recent h2{font-size:1rem;color:var(--green-dk);margin-bottom:8px}
+.recent ul{list-style:none;margin:0;padding:0}
+.recent li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:8px 0;border-bottom:1px solid var(--line)}
+.recent li:last-child{border-bottom:0}
+.recent .when{color:var(--muted);font-size:.85rem;min-width:84px}
+.recent .grow{flex:1}
+
+.tag{display:inline-block;padding:1px 9px;border-radius:12px;font-size:.8rem;border:1px solid var(--line)}
+.t-a{background:var(--green-soft);border-color:#B9D3C8;color:var(--green-dk)}
+.t-x{background:var(--gold-soft);border-color:#E3D3A6;color:#6E5415}
+.t-s{background:#EEF2F0;color:var(--muted)}
+.t-c{background:var(--red-soft);border-color:#E2C3BE;color:var(--red)}
+
+.empty{text-align:center;color:var(--muted);padding:34px 16px}
+.empty h3{color:var(--ink);font-size:1.05rem;margin-bottom:6px}
+
+/* جداول */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;justify-content:space-between;margin-bottom:12px}
+.toolbar .grp{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:8px 12px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--green-soft);color:var(--green-dk);font-weight:600}
+tr:last-child td{border-bottom:0}
+tr.now td{background:var(--gold-soft)}
+tr.off td{color:#8C9A94}
+tr.cancel td{color:#8C9A94;text-decoration:line-through}
+td.wrap{white-space:normal;min-width:150px}
+.toggle{border:1px solid var(--line);border-radius:20px;padding:2px 12px;cursor:pointer;background:#fff;font-size:.85rem}
+.toggle.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk)}
+.toggle.off{background:var(--red-soft);border-color:#E2C3BE;color:var(--red)}
+.more{display:block;margin:14px auto 0}
+
+/* الاستبيانات */
+.sv-grid{display:grid;grid-template-columns:270px minmax(0,1fr);gap:18px;align-items:start}
+.sv-grid > *{min-width:0}
+@media (max-width:860px){.sv-grid{grid-template-columns:1fr}}
+.h{font-size:1rem;color:var(--green-dk);margin-bottom:10px}
+.sv-list{list-style:none;margin:12px 0 0;padding:0}
+.sv-list button{width:100%;text-align:start;background:#fff;border:1px solid transparent;border-radius:8px;padding:8px 10px;cursor:pointer;display:block}
+.sv-list button:hover{border-color:var(--line)}
+.sv-list button[aria-current="true"]{background:var(--green-soft);border-color:var(--green)}
+.sv-list b{display:block}
+.sv-list small{color:var(--muted);display:block;margin-top:2px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fields .wide{grid-column:1/-1}
+@media (max-width:560px){.fields{grid-template-columns:1fr}}
+.step h3{font-size:1rem;color:var(--green-dk);display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--gold);color:#fff;font-size:.9rem;flex:none}
+.step.done .num{background:var(--green)}
+.msg{background:#F7FAF8;font-family:var(--body)}
+.meta{display:flex;flex-wrap:wrap;gap:4px 20px;color:var(--muted);font-size:.9rem;margin-top:4px}
+.meta b{color:var(--ink);font-weight:600}
+tr.pick td{background:var(--gold-soft)}
+.gap{margin-top:12px}
+
+dialog{border:0;border-radius:12px;padding:0;width:min(440px,92vw);box-shadow:0 18px 50px rgba(7,64,47,.25)}
+dialog::backdrop{background:rgba(10,30,22,.45)}
+.mh{padding:14px 20px;border-bottom:1px solid var(--line);font-family:var(--head);font-weight:700;color:var(--green-dk)}
+.mb{padding:16px 20px}.mb > * + *{margin-top:10px}
+.mf{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px}
+
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green-dk);color:#fff;padding:10px 18px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:90vw;text-align:center}
+#toast.show{opacity:1}#toast.err{background:var(--red)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <h1>دور السائقين في المهمات</h1>
+  <nav class="tabs" role="tablist">
+    <button class="tab" data-tab="turn" aria-selected="true">الدور</button>
+    <button class="tab" data-tab="roster" aria-selected="false">الكشف</button>
+    <button class="tab" data-tab="survey" aria-selected="false">الاستبيانات</button>
+    <button class="tab" data-tab="log" aria-selected="false">السجل</button>
+  </nav>
+</div></header>
+
+<main>
+  <div class="lists" id="lists"></div>
+
+  <section class="panel on" id="p-turn">
+    <div id="turn"></div>
+    <div class="box recent" id="recent" style="margin-top:18px"></div>
+  </section>
+
+  <section class="panel" id="p-roster">
+    <div class="toolbar">
+      <div class="grp">
+        <label class="f">اسم السائق<input type="text" id="n-name"></label>
+        <label class="f" style="width:130px">الرقم الوظيفي<input type="text" id="n-emp" inputmode="numeric"></label>
+        <button class="btn" id="n-add">إضافة إلى الكشف</button>
+      </div>
+      <div class="grp">
+        <button class="btn ghost" id="l-rename">تغيير اسم الجهة</button>
+        <button class="btn warn" id="l-del">حذف الجهة</button>
+      </div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>م</th><th>الاسم</th><th>الرقم الوظيفي</th><th>المهام</th><th>آخر مهمة</th><th>في الدور</th><th>ملاحظة</th><th></th></tr></thead>
+      <tbody id="r-body"></tbody>
+    </table></div>
+    <p class="note">«يبدأ الدور منه» تستخدم مرة واحدة لتحديد أين توقف الكشف الورقي.</p>
+  </section>
+
+  <section class="panel" id="p-survey">
+    <div class="sv-grid">
+      <aside class="box">
+        <h2 class="h">استبيانات هذه الجهة</h2>
+        <button class="btn" style="width:100%" onclick="svSel='new';renderSurveys()">استبيان جديد</button>
+        <ul class="sv-list" id="sv-list"></ul>
+        <div id="sv-link" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"></div>
+      </aside>
+      <div class="stack" id="sv-main"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-log">
+    <div class="toolbar">
+      <div class="grp">
+        <label class="f">الجهة<select id="g-list"></select></label>
+        <label class="f">الشهر<input type="month" id="g-month"></label>
+        <label class="f">بحث<input type="search" id="g-q" placeholder="اسم، رقم وظيفي، رقم طلب"></label>
+      </div>
+      <div class="grp">
+        <button class="btn" id="g-xlsx">تصدير إلى Excel</button>
+        <button class="btn ghost" id="g-backup">نسخة احتياطية</button>
+        <label class="btn ghost">استيراد نسخة<input type="file" id="g-import" accept=".json" hidden></label>
+      </div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>التاريخ</th><th>الجهة</th><th>السائق</th><th>الرقم الوظيفي</th><th>الإجراء</th><th>رقم الطلب</th><th>ملاحظة</th></tr></thead>
+      <tbody id="g-body"></tbody>
+    </table></div>
+    <button class="btn ghost more" id="g-more" hidden>عرض 50 سجلاً إضافياً</button>
+    <p class="note">البيانات محفوظة في هذا المتصفح. خذ نسخة احتياطية أسبوعياً.</p>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <div class="mh" id="dlg-h"></div>
+  <div class="mb" id="dlg-b"></div>
+  <div class="mf"><button class="btn" id="dlg-ok"></button><button class="btn ghost" id="dlg-no">إلغاء</button></div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const SEED = {"drivers": {"1291": "سعيد بن عبدالله بن محمد الرحبي", "5603": "هديب بن على بن سعيد البدوي", "5610": "عادل بن صالح بن محمد البلوشي", "5667": "حمود بن سيف بن سعيد الرحبي", "5994": "خلفان سيف بن منين الصائغي", "6040": "نايف بن سالم بن خليفه الغافري", "6360": "سامي بن مبارك بن سالم السيابي", "7523": "محمد بن سعيد بن مرهون المزروعي", "6486": "حافظ بن سليم بن عامر العامري", "7525": "مسعود بن خميس بن الجنيبي السديري", "5098": "يونس بس سالم بن سعيد عبدالباقي", "7675": "بدر بن محمد بن عبدالله الفارسي", "8166": "خالد بن سعيد بن خالد العامري", "8841": "عمر بن عمير بن فريح العامري", "8896": "حسين بن علي بن سعيد الوهيبي", "9019": "خميس بن علي بن محمد الرحبي", "9022": "محمد بن راشد بن سليمان العبري", "10185": "سليمان بن زايد بن سليمان العامري", "10190": "حبيب بن سيف بن سعيد الحسني", "10301": "سعد بن خميس بن خليفه الصالحي", "10761": "أحمد بن محمد بن سعيد الوهيبي", "12084": "حافظ بن ضحي بن سليم السوطي", "12088": "سيف بن سعيد بن على الجابري", "12089": "خالد بن سعيد بن شنان الحراصي", "12090": "جمعة بن خصيب بن ناصر الرحبي", "12093": "راشد بن عبدالله بن خميس العامري", "12100": "على بن غريب بن خلفان المنذري", "12114": "عدنان بن سيف بن سليمان السيابي", "12149": "محمود بن خالد بن سليم السعدي", "12173": "منصور بن مراد بن ادم البلوشي", "12435": "عبدالله بن علي بن بدر البلوشي", "12980": "محفوظ بن حمود بن ربيع السيابي", "12981": "تركي بن خلفان بن سعيد الناصري", "13013": "زاهر بن محمد بن حمد الحسيني", "12456": "يوسف بن ناصر بن محمد الجرداني", "12901": "محمد بن سالم بن عبدالله الحكماني", "12903": "ناصر بن علي بن سالم الدفاعي", "12904": "ناصر بن خلفان بن راشد الجلنداني", "12909": "سالم بن هدوب بن سبيح الهاشمي", "12978": "حامد بن حارب بن ناصر الجساسي", "13199": "سالم بن حبيب بن سليم الحضرمي", "13439": "شيخان بن هلال بن عيسى الشامسي", "13359": "هلال بن مسلم بن سويد الكيومي", "15725": "سيف بن سعيد بن سيف الجابري", "15726": "مازن بن محمد بن سيبل الهوتي", "15727": "حمزه بن سليمان بن عبدالله الحضرمي", "15742": "نوح بن سعيد بن سيف المعمري", "15744": "عبدالمجيد بن عبدالله بن زيد البدري", "15754": "محمد بن سالم بن سعيد النعماني", "16124": "احمد بن سعيد بن راشد الراجحي", "16125": "محمد بن سليمان بن سيف الحارثي", "16258": "سامي بن حميد بن حمد الحديدي", "5601": "هلال بن علي بن عبيد الحراصي", "6037": "راشد بن علي بن مطر الكيومي", "10188": "احمد بن راشد بن ثاني العامري", "10252": "خميس بن عبدالله بن خميس البلوشي"}, "lists": [{"id": "med", "name": "كلية الطب والعلوم الصحية", "members": ["1291", "5603", "5610", "5667", "5994", "6040", "6360", "7523", "6486", "7525", "5098", "7675", "8166", "8841", "8896", "9019", "9022", "10185", "10190", "10301", "10761", "12084", "12088", "12089", "12090", "12093", "12100", "12114", "12149", "12173", "12435", "12980", "12981", "13013", "12456", "12901", "12903", "12904", "12909", "12978", "13199", "13439", "13359", "15725", "15726", "15727", "15742", "15744", "15754", "16124", "16125", "16258"], "excluded": {}, "notes": {}}, {"id": "prac", "name": "التربية العملية", "members": ["1291", "5098", "5601", "5603", "5610", "5667", "5994", "6037", "6040", "6360", "6486", "7523", "7525", "7675", "8166", "8841", "8896", "9019", "9022", "10185", "10188", "10190", "10252", "10301", "10761", "12084", "12088", "12089", "12090", "12093", "12100", "12114", "12149", "12173", "12435", "12980", "12981", "13013", "12456", "12901", "12903", "12904", "12909", "12978", "13199", "13439", "13359", "15725", "15726", "15727", "15742", "15744", "15754", "16124", "16125", "16258"], "excluded": {}, "notes": {}}, {"id": "idad", "name": "برنامج إعداد", "members": ["1291", "5098", "5601", "5603", "5610", "5667", "5994", "6037", "6040", "6360", "6486", "7523", "7525", "7675", "8166", "8841", "8896", "9019", "9022", "10185", "10188", "10190", "10252", "10301", "10761", "12084", "12088", "12089", "12090", "12093", "12100", "12114", "12149", "12173", "12435", "12980", "12981", "13013", "12456", "12901", "12903", "12904", "12909", "12978", "13199", "13439", "13359", "15725", "15726", "15727", "15742", "15744", "15754", "16124", "16125", "16258"], "excluded": {"5098": "مناوب", "5601": "الحالات الخاصة", "5603": "الطب مستشفى المسرة"}, "notes": {"6037": "اعتذر عن المهمة (من الكشف الورقي)", "6040": "اعتذر عن المهمة (من الكشف الورقي)"}}], "log": [{"id": "imp0", "listId": "idad", "emp": "1291", "name": "سعيد بن عبدالله بن محمد الرحبي", "type": "إسناد", "reqNo": "", "date": "2025-09-21", "note": "مستورد من الكشف الورقي", "createdAt": 1758412800001}, {"id": "imp1", "listId": "idad", "emp": "1291", "name": "سعيد بن عبدالله بن محمد الرحبي", "type": "إسناد", "reqNo": "", "date": "2026-08-06", "note": "مستورد من الكشف الورقي", "createdAt": 1785974400002}, {"id": "imp2", "listId": "idad", "emp": "5610", "name": "عادل بن صالح بن محمد البلوشي", "type": "إسناد", "reqNo": "", "date": "2024-08-12", "note": "مستورد من الكشف الورقي", "createdAt": 1723420800003}, {"id": "imp3", "listId": "idad", "emp": "5610", "name": "عادل بن صالح بن محمد البلوشي", "type": "إسناد", "reqNo": "", "date": "2025-01-09", "note": "مستورد من الكشف الورقي", "createdAt": 1736380800004}, {"id": "imp4", "listId": "idad", "emp": "6360", "name": "سامي بن مبارك بن سالم السيابي", "type": "إسناد", "reqNo": "", "date": "2024-10-31", "note": "مستورد من الكشف الورقي", "createdAt": 1730332800005}, {"id": "imp5", "listId": "idad", "emp": "6360", "name": "سامي بن مبارك بن سالم السيابي", "type": "إسناد", "reqNo": "", "date": "2025-09-04", "note": "مستورد من الكشف الورقي", "createdAt": 1756944000006}, {"id": "imp6", "listId": "idad", "emp": "10185", "name": "سليمان بن زايد بن سليمان العامري", "type": "إسناد", "reqNo": "", "date": "2024-10-13", "note": "مستورد من الكشف الورقي", "createdAt": 1728777600007}, {"id": "imp7", "listId": "idad", "emp": "10185", "name": "سليمان بن زايد بن سليمان العامري", "type": "إسناد", "reqNo": "", "date": "2025-08-31", "note": "مستورد من الكشف الورقي", "createdAt": 1756598400008}, {"id": "imp8", "listId": "idad", "emp": "10190", "name": "حبيب بن سيف بن سعيد الحسني", "type": "إسناد", "reqNo": "", "date": "2024-10-13", "note": "مستورد من الكشف الورقي", "createdAt": 1728777600009}, {"id": "imp9", "listId": "idad", "emp": "10190", "name": "حبيب بن سيف بن سعيد الحسني", "type": "إسناد", "reqNo": "", "date": "2025-08-31", "note": "مستورد من الكشف الورقي", "createdAt": 1756598400010}, {"id": "imp_old", "listId": "prac", "emp": "1291", "name": "سعيد بن عبدالله بن محمد الرحبي", "type": "إسناد", "reqNo": "", "date": "2024-02-04", "note": "الفترة 4/2 إلى 20/5/2024، مستورد من الكشف الورقي", "createdAt": 1707004800011}], "current": "med"};
+const KEY = 'squ_driver_rotation_v1';
+const T = { A:'إسناد', X:'اعتذار', S:'بداية الدور' };
+const clone = o => JSON.parse(JSON.stringify(o));
+let S = load();
+
+function load(){
+  try{ const r = localStorage.getItem(KEY); if(r){ const p = JSON.parse(r); if(p.lists && p.drivers && p.log){ p.surveys = p.surveys || []; return p; } } }catch(e){}
+  return { ...clone(SEED), surveys: [] };
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); return true; }
+  catch(e){ toast('تعذّر الحفظ في المتصفح. خذ نسخة احتياطية الآن.', true); return false; }
+}
+
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function todayISO(){ const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+const fmt = iso => iso ? iso.split('-').reverse().join('/') : '';
+const nameOf = emp => S.drivers[emp] || emp;
+const list = () => S.lists.find(l => l.id === S.current) || S.lists[0];
+let tt;
+function toast(m, err){ const e = $('#toast'); e.textContent = m; e.className = 'show' + (err ? ' err' : ''); clearTimeout(tt); tt = setTimeout(() => e.className = '', 3200); }
+function modal(title, body, ok, onOk){
+  const d = $('#dlg'); $('#dlg-h').textContent = title; $('#dlg-b').innerHTML = body;
+  $('#dlg-ok').textContent = ok; $('#dlg-ok').onclick = () => { if(onOk() !== false) d.close(); };
+  $('#dlg-no').onclick = () => d.close(); d.showModal();
+  const f = d.querySelector('.mb input'); if(f){ f.focus(); f.select(); }
+}
+
+/* ===== حساب الدور من السجل ===== */
+const active = L => S.log.filter(e => e.listId === L.id && !e.cancelled).sort((a,b) => b.createdAt - a.createdAt);
+function queue(L, n){
+  const m = L.members; if(!m.length) return [];
+  const last = active(L)[0];
+  let i = last ? m.indexOf(last.emp) : -1;
+  if(last && last.type !== T.S && i >= 0) i++;          // بعد آخر من أُسند إليه أو اعتذر
+  if(i < 0) i = 0;                                        // لا يوجد سجل، أو السائق حُذف من الكشف
+  const out = [];
+  for(let k = 0; k < m.length && out.length < n; k++){
+    const emp = m[(i + k) % m.length];
+    if(!L.excluded[emp]) out.push(emp);
+  }
+  return out;
+}
+function stats(L, emp){
+  const a = S.log.filter(e => e.listId === L.id && e.emp === emp && e.type === T.A && !e.cancelled);
+  return { count: a.length, last: a.reduce((m,e) => e.date > m ? e.date : m, '') };
+}
+function record(type, emp, extra = {}){
+  const L = list();
+  S.log.push({ id: uid(), listId: L.id, emp, name: nameOf(emp), type, reqNo: '', date: todayISO(), note: '', createdAt: Date.now(), ...extra });
+  return save();
+}
+
+/* ===== الجهات ===== */
+function renderLists(){
+  $('#lists').innerHTML = S.lists.map(l => `<button class="chip" aria-pressed="${l.id === S.current}" onclick="pick('${l.id}')">${esc(l.name)}</button>`).join('')
+    + `<button class="chip add" onclick="addList()">+ جهة جديدة</button>`;
+}
+function pick(id){ S.current = id; save(); render(); }
+function addList(){
+  modal('جهة جديدة', `<label class="f">اسم الجهة<input type="text" id="m-v"></label><p class="note">يُنشأ كشفها بجميع السائقين (${Object.keys(S.drivers).length}) بترتيب الأرقام الوظيفية، ويمكن تعديله من تبويب الكشف.</p>`, 'إنشاء الجهة', () => {
+    const name = $('#m-v').value.trim(); if(!name){ toast('اكتب اسم الجهة', true); return false; }
+    const members = Object.keys(S.drivers).sort((a,b) => a - b);
+    const id = uid(); S.lists.push({ id, name, members, excluded:{}, notes:{} }); S.current = id;
+    save(); render(); toast(`أُنشئت جهة ${name}`);
+  });
+}
+$('#l-rename').onclick = () => { const L = list();
+  modal('تغيير اسم الجهة', `<label class="f">الاسم<input type="text" id="m-v" value="${esc(L.name)}"></label>`, 'حفظ', () => {
+    const v = $('#m-v').value.trim(); if(!v) return false; L.name = v; save(); render(); });
+};
+$('#l-del').onclick = () => { const L = list();
+  if(S.lists.length === 1) return toast('يلزم وجود جهة واحدة على الأقل', true);
+  modal(`حذف ${L.name}`, `<p style="margin:0">سيُحذف الكشف، وتبقى سجلاته في السجل.</p>`, 'حذف الجهة', () => {
+    S.lists = S.lists.filter(x => x.id !== L.id); S.current = S.lists[0].id; save(); render(); toast('حُذفت الجهة'); });
+};
+
+/* ===== تبويب الدور ===== */
+function renderTurn(){
+  const L = list(), q = queue(L, 4), box = $('#turn');
+  if(!q.length){
+    box.innerHTML = `<div class="box empty"><h3>لا يوجد سائق في الدور</h3><p>كل من في كشف ${esc(L.name)} مستثنى. أعد أحدهم من تبويب الكشف.</p></div>`;
+  } else {
+    const emp = q[0], pos = L.members.indexOf(emp) + 1, paper = L.notes[emp];
+    box.innerHTML = `<div class="turn">
+      <div class="cap">الدور في ${esc(L.name)} على</div>
+      <div class="who">${esc(nameOf(emp))}</div>
+      <div class="id">الرقم الوظيفي ${emp}، رقم ${pos} في الكشف</div>
+      ${paper ? `<span class="paper">${esc(paper)}</span>` : ''}
+      <div class="form">
+        <label class="f">رقم الطلب<input type="text" id="a-req"></label>
+        <label class="f">التاريخ<input type="date" id="a-date" value="${todayISO()}"></label>
+        <label class="f wide">ملاحظة<input type="text" id="a-note" placeholder="اختياري"></label>
+      </div>
+      <div class="actions">
+        <button class="btn big" onclick="doAssign('${emp}')">إسناد المهمة</button>
+        <button class="btn ghost" onclick="doSkip('${emp}')">اعتذر، انتقل للتالي</button>
+      </div>
+      ${q.length > 1 ? `<div class="after">بعده في الدور:<ol>${q.slice(1).map(e => `<li>${esc(nameOf(e))}</li>`).join('')}</ol></div>` : ''}
+    </div>`;
+  }
+  const rec = active(L).slice(0, 6);
+  const cls = { [T.A]:'t-a', [T.X]:'t-x', [T.S]:'t-s' };
+  $('#recent').innerHTML = `<h2>آخر ما سُجل في هذا الكشف</h2>` + (rec.length ? `<ul>${rec.map((e,i) => `
+    <li><span class="when">${fmt(e.date)}</span><span class="tag ${cls[e.type]}">${e.type}</span>
+      <span class="grow"><b>${esc(e.name)}</b>${e.reqNo ? `، الطلب ${esc(e.reqNo)}` : ''}${e.note ? ` <span class="note">(${esc(e.note)})</span>` : ''}</span>
+      ${i === 0 ? `<button class="btn warn sm" onclick="undo('${e.id}')">تراجع</button>` : ''}</li>`).join('')}</ul>`
+    : `<p class="note">لم يُسجل شيء بعد. أول إسناد يبدأ من رأس الكشف.</p>`);
+}
+function formVals(){ return { reqNo: $('#a-req').value.trim(), date: $('#a-date').value || todayISO(), note: $('#a-note').value.trim() }; }
+function doAssign(emp){
+  const v = formVals();
+  const dup = v.reqNo && S.log.find(e => e.reqNo === v.reqNo && e.type === T.A && !e.cancelled);
+  const go = () => { if(record(T.A, emp, v)){ render(); toast(`أُسندت المهمة إلى ${nameOf(emp)}`); } };
+  if(dup) modal('رقم الطلب مسجل مسبقاً', `<p style="margin:0">الطلب ${esc(v.reqNo)} أُسند إلى ${esc(dup.name)} بتاريخ ${fmt(dup.date)}. هل تريد إسناده مرة أخرى؟</p>`, 'متابعة الإسناد', go);
+  else go();
+}
+function doSkip(emp){
+  const v = formVals();
+  if(record(T.X, emp, { date: v.date, note: v.note })){ render(); const n = queue(list(),1)[0]; toast(`سُجل اعتذار ${nameOf(emp)}. الدور الآن على ${n ? nameOf(n) : 'لا أحد'}`); }
+}
+function undo(id){
+  const e = S.log.find(x => x.id === id);
+  modal('تراجع', `<p style="margin:0">سيُلغى «${e.type}» ${esc(e.name)} ويعود الدور إليه.</p>`, 'تراجع', () => {
+    e.cancelled = Date.now(); save(); render(); toast(`عاد الدور إلى ${e.name}`); });
+}
+
+/* ===== تبويب الكشف ===== */
+function renderRoster(){
+  const L = list(), now = queue(L,1)[0];
+  $('#r-body').innerHTML = L.members.map((emp,i) => {
+    const s = stats(L, emp), off = L.excluded[emp];
+    return `<tr class="${emp === now ? 'now' : ''} ${off ? 'off' : ''}">
+      <td>${i+1}</td><td><b>${esc(nameOf(emp))}</b>${emp === now ? ' <span class="tag t-x">عليه الدور</span>' : ''}</td>
+      <td>${emp}</td><td>${s.count}</td><td>${fmt(s.last) || '—'}</td>
+      <td><button class="toggle ${off ? 'off' : 'on'}" onclick="toggleEx('${emp}')">${off ? 'مستثنى: ' + esc(off) : 'نعم'}</button></td>
+      <td class="wrap">${esc(L.notes[emp] || '')}</td>
+      <td>${off ? '' : `<button class="btn ghost sm" onclick="startFrom('${emp}')">يبدأ الدور منه</button>`}
+          <button class="btn warn sm" onclick="removeMember('${emp}')">إزالة</button></td></tr>`;
+  }).join('') || `<tr><td colspan="8" class="empty">الكشف فارغ. أضف السائقين من الأعلى.</td></tr>`;
+}
+function toggleEx(emp){
+  const L = list();
+  if(L.excluded[emp]){ delete L.excluded[emp]; save(); render(); return toast(`عاد ${nameOf(emp)} إلى الدور`); }
+  modal(`استثناء ${nameOf(emp)}`, `<label class="f">السبب<input type="text" id="m-v" value="إجازة"></label><p class="note">يُتخطى في الدور حتى تعيده.</p>`, 'استثناء', () => {
+    L.excluded[emp] = $('#m-v').value.trim() || 'غير متاح'; save(); render(); });
+}
+function startFrom(emp){
+  modal('تحديد بداية الدور', `<p style="margin:0">سيصبح الدور على ${esc(nameOf(emp))}، ثم من بعده بالترتيب.</p>`, 'تأكيد', () => {
+    if(record(T.S, emp, { note: 'تحديد يدوي' })){ render(); toast(`الدور الآن على ${nameOf(emp)}`); } });
+}
+function removeMember(emp){
+  const L = list();
+  modal('إزالة من الكشف', `<p style="margin:0">سيُزال ${esc(nameOf(emp))} من كشف ${esc(L.name)} فقط، وتبقى سجلاته.</p>`, 'إزالة', () => {
+    L.members = L.members.filter(e => e !== emp); delete L.excluded[emp]; save(); render(); });
+}
+$('#n-add').onclick = () => {
+  const name = $('#n-name').value.trim().replace(/\s+/g,' '), emp = $('#n-emp').value.trim();
+  if(!name || !emp) return toast('اكتب الاسم والرقم الوظيفي', true);
+  const L = list();
+  if(L.members.includes(emp)) return toast('هذا الرقم موجود في الكشف', true);
+  if(S.drivers[emp] && S.drivers[emp] !== name) return toast(`الرقم ${emp} مسجل باسم ${S.drivers[emp]}`, true);
+  S.drivers[emp] = name; L.members.push(emp); save();
+  $('#n-name').value = ''; $('#n-emp').value = ''; render(); toast(`أُضيف ${name} في آخر الكشف`);
+};
+
+/* ===== تبويب السجل ===== */
+let lim = 50, qt;
+function rowsLog(){
+  const li = $('#g-list').value, mo = $('#g-month').value, q = $('#g-q').value.trim();
+  return S.log.filter(e => (!li || e.listId === li) && (!mo || e.date.startsWith(mo)) &&
+    (!q || [e.name, e.emp, e.reqNo].some(v => (v || '').includes(q))))
+    .sort((a,b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+}
+const listName = id => (S.lists.find(l => l.id === id) || {}).name || 'جهة محذوفة';
+function renderLog(){
+  const sel = $('#g-list'), keep = sel.value;
+  sel.innerHTML = `<option value="">كل الجهات</option>` + S.lists.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+  sel.value = keep;
+  const r = rowsLog();
+  const cls = { [T.A]:'t-a', [T.X]:'t-x', [T.S]:'t-s' };
+  $('#g-body').innerHTML = r.slice(0, lim).map(e => `<tr class="${e.cancelled ? 'cancel' : ''}">
+    <td>${fmt(e.date)}</td><td>${esc(listName(e.listId))}</td><td><b>${esc(e.name)}</b></td><td>${e.emp}</td>
+    <td><span class="tag ${e.cancelled ? 't-c' : cls[e.type]}">${e.cancelled ? 'مُلغى' : e.type}</span></td>
+    <td>${esc(e.reqNo)}</td><td class="wrap">${esc(e.note)}</td></tr>`).join('')
+    || `<tr><td colspan="7" class="empty">لا توجد سجلات مطابقة.</td></tr>`;
+  $('#g-more').hidden = r.length <= lim;
+}
+$('#g-more').onclick = () => { lim += 50; renderLog(); };
+['#g-list','#g-month'].forEach(s => $(s).onchange = () => { lim = 50; renderLog(); });
+$('#g-q').oninput = () => { clearTimeout(qt); qt = setTimeout(() => { lim = 50; renderLog(); }, 250); };
+
+$('#g-xlsx').onclick = () => {
+  if(typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل. تحقق من الاتصال بالإنترنت.', true);
+  const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+  const log = rowsLog().filter(e => !e.cancelled).map(e => ({ 'التاريخ': fmt(e.date), 'الجهة': listName(e.listId), 'الاسم': e.name,
+    'الرقم الوظيفي': Number(e.emp) || e.emp, 'الإجراء': e.type, 'رقم الطلب': e.reqNo, 'ملاحظة': e.note }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(log.length ? log : [{ 'التاريخ': 'لا توجد سجلات' }]), 'السجل');
+  S.lists.forEach(L => {
+    const now = queue(L,1)[0];
+    const rows = L.members.map((emp,i) => { const s = stats(L, emp); return { 'م': i+1, 'الاسم': nameOf(emp), 'الرقم الوظيفي': Number(emp) || emp,
+      'عدد المهام': s.count, 'آخر مهمة': fmt(s.last), 'الحالة': L.excluded[emp] ? 'مستثنى: ' + L.excluded[emp] : (emp === now ? 'عليه الدور' : ''), 'ملاحظة': L.notes[emp] || '' }; });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length ? rows : [{ 'م': '' }]), L.name.replace(/[\\\/?*\[\]:]/g,'').slice(0,31));
+  });
+  XLSX.writeFile(wb, `دور_السائقين_${todayISO()}.xlsx`); toast('تم تصدير ملف Excel');
+};
+$('#g-backup').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type:'application/json' }));
+  a.download = `نسخة_دور_السائقين_${todayISO()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('تم حفظ النسخة الاحتياطية');
+};
+$('#g-import').onchange = ev => {
+  const f = ev.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { try{
+      const p = JSON.parse(rd.result); if(!p.lists || !p.drivers || !Array.isArray(p.log)) throw 0;
+      modal('استيراد نسخة', `<p style="margin:0">ستحل النسخة (${p.lists.length} جهات، ${p.log.length} سجل) محل البيانات الحالية.</p>`, 'استبدال البيانات', () => { p.surveys = p.surveys || []; S = p; save(); render(); toast('تم الاستيراد'); });
+    }catch(e){ toast('الملف ليس نسخة احتياطية صالحة', true); }
+    ev.target.value = ''; };
+  rd.readAsText(f);
+};
+
+/* ===== الاستبيانات ===== */
+let svSel = null;
+const SV_OPEN = 'مفتوح', SV_DONE = 'تم الإسناد';
+const toLatin = t => String(t ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+const EMP_RE = /(?<!\d)\d{3,6}(?!\d)/g;
+const svOf = id => S.surveys.find(v => v.id === id);
+const clock = ts => new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+function fmtDT(v){ if(!v) return ''; const [d,t] = v.split('T'); return fmt(d) + (t ? ' الساعة ' + t.slice(0,5) : ''); }
+
+/* ----- الربط مع خادم الاستبيانات (Google Apps Script) ----- */
+const RKEY = 'squ_driver_rotation_remote';
+let R = (() => { try{ return JSON.parse(localStorage.getItem(RKEY)) || {}; }catch(e){ return {}; } })();
+const remoteOn = () => !!(R.url && R.key);
+function pageBase(){
+  let b = (R.page || '').trim().replace(/[?#].*$/, '');
+  if(b && !/\.html?$/i.test(b) && !b.endsWith('/')) b += '/';
+  return b;
+}
+const linkOf = v => v.remoteId ? (pageBase() ? pageBase() + '?s=' + v.remoteId : (v.formUrl || R.url + '?s=' + v.remoteId)) : (v.link || '');
+let lastSync = 0, syncing = false;
+
+async function api(method, params){
+  let res;
+  if(method === 'GET'){
+    const u = new URL(R.url);
+    Object.entries({ ...params, key: R.key }).forEach(([k,v]) => u.searchParams.set(k, v));
+    res = await fetch(u, { redirect: 'follow' });
+  } else {
+    res = await fetch(R.url, { method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...params, key: R.key }) });
+  }
+  let j;
+  try{ j = await res.json(); }catch(e){ throw new Error('الرد ليس من خادم الاستبيانات. تأكد من رابط النشر وأن الوصول «أي شخص»'); }
+  if(!j.ok) throw new Error(j.error || 'خطأ غير معروف');
+  return j;
+}
+function remoteStatus(v, status){
+  if(!remoteOn() || !v.remoteId) return;
+  api('POST', { action: 'status', id: v.remoteId, status }).catch(e => toast('لم يُحدَّث الرابط: ' + e.message, true));
+}
+function linkSettings(){
+  modal('ربط الروابط التلقائية', `
+    <label class="f">رابط تطبيق الويب (Apps Script)<input type="text" id="m-url" dir="ltr" value="${esc(R.url || '')}" placeholder="https://script.google.com/macros/s/.../exec"></label>
+    <label class="f">مفتاح الربط<input type="text" id="m-key" value="${esc(R.key || '')}"></label>
+    <p class="note">نفس المفتاح المكتوب في أول سطر من ملف Code.gs.</p>
+    <label class="f">رابط صفحة السائقين (GitHub Pages)<input type="text" id="m-page" dir="ltr" value="${esc(R.page || '')}" placeholder="https://username.github.io/squ-survey/"></label>
+    <p class="note">اختياري، لكنه يجعل الرابط يفتح على كل الأجهزة والمتصفحات. عند تركه فارغاً تُستخدم صفحة Google.</p>`, 'حفظ واختبار', () => {
+    const url = $('#m-url').value.trim(), key = $('#m-key').value.trim(), page = $('#m-page').value.trim();
+    if(page && !/^https:\/\//.test(page)){ toast('رابط صفحة السائقين يجب أن يبدأ بـ https://', true); return false; }
+    if(url && !/^https:\/\/script\.google\.com\/.+\/exec$/.test(url)){ toast('الرابط يجب أن يبدأ بـ script.google.com وينتهي بـ exec', true); return false; }
+    R = url && key ? { url, key, page } : {};
+    try{ localStorage.setItem(RKEY, JSON.stringify(R)); }catch(e){}
+    render();
+    if(!remoteOn()) return toast('أُلغي الربط. ستعمل الاستبيانات بالرد عبر واتساب');
+    api('GET', { action: 'ping' }).then(() => { toast('تم الربط بنجاح'); svSync(true); })
+      .catch(e => toast('فشل الاتصال: ' + e.message, true));
+  });
+}
+
+async function svSync(quiet){
+  if(!remoteOn() || syncing) return;
+  const open = S.surveys.filter(v => v.remoteId && v.status === SV_OPEN);
+  if(!open.length){ if(!quiet) toast('لا توجد استبيانات مفتوحة مرتبطة برابط'); return; }
+  syncing = true;
+  const btn = $('#sv-refresh'); if(btn){ btn.disabled = true; btn.textContent = 'جارٍ التحديث...'; }
+  try{
+    const j = await api('GET', { action: 'responses', ids: open.map(v => v.remoteId).join(',') });
+    let fresh = 0, changed = false;
+    open.forEach(v => {
+      const before = JSON.stringify([v.responses, v.declined]);
+      const rs = j.responses[v.remoteId] || {};
+      v.declined = {}; v.removed = v.removed || {};
+      for(const [emp, r] of Object.entries(rs)){
+        const mine = v.responses[emp];
+        if(r.answer === 'نعم'){
+          if(v.removed[emp] && r.at <= v.removed[emp]) continue;   // حذفه المسؤول يدوياً
+          if(!mine) fresh++;
+          if(!mine || mine.src === 'الرابط') v.responses[emp] = { src: 'الرابط', at: r.at };
+        } else {
+          v.declined[emp] = r.at;
+          if(mine && mine.src === 'الرابط') delete v.responses[emp];
+        }
+      }
+      if(JSON.stringify([v.responses, v.declined]) !== before) changed = true;
+    });
+    lastSync = Date.now();
+    if(changed){ save(); render(); } else renderSyncLabel();
+    if(!quiet) toast(fresh ? `ردود جديدة بالاستعداد: ${fresh}` : 'لا توجد ردود جديدة');
+  }catch(e){
+    if(!quiet) toast('تعذّر التحديث: ' + e.message, true);
+  }finally{
+    syncing = false;
+    const b = $('#sv-refresh'); if(b){ b.disabled = false; b.textContent = 'تحديث الآن'; }
+  }
+}
+function renderSyncLabel(){ const l = $('#sv-synced'); if(l) l.textContent = lastSync ? 'آخر تحديث ' + clock(lastSync) : 'لم يُحدَّث بعد'; }
+setInterval(() => {
+  if(document.visibilityState === 'visible' && $('#p-survey').classList.contains('on')) svSync(true);
+}, 60000);
+
+/* ----- نص الرسالة ----- */
+function svMessage(v){
+  const L = S.lists.find(l => l.id === v.listId);
+  const url = linkOf(v);
+  return [
+    'السلام عليكم ورحمة الله وبركاته',
+    `الإخوة السائقون في كشف ${L ? L.name : ''}`,
+    '',
+    `مطلوب سائقون لمهمة: ${v.title}`,
+    v.date ? `التاريخ: ${fmt(v.date)}` : null,
+    v.place ? `المكان: ${v.place}` : null,
+    `عدد السائقين المطلوب: ${v.needed}`,
+    v.details || null,
+    '',
+    url ? `للرد اضغط الرابط وأدخل رقمك الوظيفي:\n${url}` : 'من لديه الاستعداد يرجى الرد برقمه الوظيفي فقط.',
+    v.deadline ? `آخر موعد للرد: ${fmtDT(v.deadline)}` : null,
+    'يتم الإسناد حسب الأولوية في كشف الدور.',
+    '',
+    'دائرة النقليات'
+  ].filter(x => x !== null).join('\n');
+}
+
+function ranked(v){
+  const L = S.lists.find(l => l.id === v.listId);
+  const order = L ? queue(L, L.members.length) : [];
+  const pos = new Map(order.map((e,i) => [e,i]));
+  const rows = Object.keys(v.responses).map(emp => {
+    let block = null;
+    if(!L || !L.members.includes(emp)) block = 'ليس في كشف الجهة';
+    else if(L.excluded[emp]) block = 'مستثنى: ' + L.excluded[emp];
+    return { emp, block, p: pos.has(emp) ? pos.get(emp) : Infinity, ...v.responses[emp] };
+  });
+  return { ok: rows.filter(r => !r.block).sort((a,b) => a.p - b.p), blocked: rows.filter(r => r.block) };
+}
+
+/* ----- العرض ----- */
+function renderSurveys(){
+  const L = list();
+  const mine = S.surveys.filter(v => v.listId === L.id).sort((a,b) => b.createdAt - a.createdAt);
+  $('#sv-link').innerHTML = remoteOn()
+    ? `<span class="tag t-a">الروابط التلقائية مفعّلة</span>${R.page ? ' <span class="tag t-s">صفحة GitHub</span>' : ''} <button class="btn ghost sm" onclick="linkSettings()">الإعدادات</button>`
+    : `<span class="tag t-s">الروابط التلقائية غير مربوطة</span> <button class="btn ghost sm" onclick="linkSettings()">ربط</button>`;
+  $('#sv-list').innerHTML = mine.map(v => `<li><button aria-current="${v.id === svSel}" onclick="svSel='${v.id}';renderSurveys()">
+      <b>${esc(v.title)}</b>
+      <small>${v.date ? fmt(v.date) + '، ' : ''}مستعدون ${Object.keys(v.responses).length}${v.declined && Object.keys(v.declined).length ? '، معتذرون ' + Object.keys(v.declined).length : ''}</small>
+      <small><span class="tag ${v.status === SV_OPEN ? 't-x' : 't-a'}">${v.status}</span>${v.formUrl ? ' <span class="tag t-s">رابط</span>' : ''}</small></button></li>`).join('')
+    || `<li class="note">لا توجد استبيانات بعد.</li>`;
+
+  const main = $('#sv-main');
+  const keepPaste = $('#sv-paste') ? $('#sv-paste').value : '';
+  if(svSel === 'new'){ main.innerHTML = svNewForm(L); return; }
+  const v = svOf(svSel);
+  if(!v || v.listId !== L.id){
+    svSel = null;
+    main.innerHTML = `<div class="box empty"><h3>اسأل السائقين قبل الإسناد</h3>
+      <p>أنشئ استبياناً للمهمة${remoteOn() ? '، فيُنشأ له رابط تلقائياً' : ''}، وأرسله لمجموعة السائقين، ثم تظهر لك قائمة المستعدين مرتبة حسب الدور في كشف ${esc(L.name)}.</p>
+      <button class="btn" onclick="svSel='new';renderSurveys()">استبيان جديد</button></div>`;
+    return;
+  }
+  main.innerHTML = svDetail(v, L);
+  if($('#sv-paste')) $('#sv-paste').value = keepPaste;
+  const pick = $('#sv-add');
+  if(pick) pick.innerHTML = `<option value="">اختر سائقاً</option>` + L.members.filter(e => !v.responses[e])
+    .map(e => `<option value="${e}">${esc(nameOf(e))} (${e})</option>`).join('');
+  renderSyncLabel();
+}
+
+function svNewForm(L){
+  return `<div class="box"><h2 class="h">استبيان جديد لكشف ${esc(L.name)}</h2>
+    <div class="fields">
+      <label class="f wide">المهمة<input type="text" id="n-title" placeholder="مثال: نقل طلبة برنامج إعداد إلى صلالة"></label>
+      <label class="f">تاريخ المهمة<input type="date" id="n-date"></label>
+      <label class="f">المكان<input type="text" id="n-place"></label>
+      <label class="f">عدد السائقين المطلوب<input type="number" id="n-need" min="1" value="1"></label>
+      <label class="f">آخر موعد للرد<input type="datetime-local" id="n-dead"></label>
+      ${remoteOn() ? '' : `<label class="f wide">رابط نموذج خارجي (اختياري)<input type="text" id="n-link" dir="ltr" placeholder="https://forms.office.com/..."></label>`}
+      <label class="f wide">تفاصيل إضافية<textarea id="n-det" placeholder="مدة المهمة، نوع المركبة، وقت التحرك"></textarea></label>
+    </div>
+    <div class="actions gap"><button class="btn" id="n-go" onclick="svCreate()">${remoteOn() ? 'إنشاء الاستبيان والرابط' : 'إنشاء الاستبيان'}</button>
+      <button class="btn ghost" onclick="svSel=null;renderSurveys()">إلغاء</button></div>
+    <p class="note">${remoteOn() ? 'يُنشأ رابط خاص بهذا الاستبيان، وتصل ردود السائقين إلى هنا تلقائياً.' : 'بدون ربط، تطلب الرسالة من السائقين الرد برقمهم الوظيفي في واتساب. للروابط التلقائية اضغط «ربط» في القائمة الجانبية.'}</p></div>`;
+}
+
+async function svCreate(){
+  const title = $('#n-title').value.trim();
+  if(!title) return toast('اكتب اسم المهمة', true);
+  const L = list();
+  const v = { id: uid(), listId: L.id, title, date: $('#n-date').value, place: $('#n-place').value.trim(),
+    needed: Math.max(1, parseInt($('#n-need').value) || 1), deadline: $('#n-dead').value,
+    link: $('#n-link') ? $('#n-link').value.trim() : '', details: $('#n-det').value.trim(),
+    responses: {}, declined: {}, removed: {}, status: SV_OPEN, assigned: [], createdAt: Date.now() };
+  if(remoteOn()){
+    const btn = $('#n-go'); btn.disabled = true; btn.textContent = 'جارٍ إنشاء الرابط...';
+    try{
+      const members = {}; L.members.forEach(e => members[e] = nameOf(e));
+      const j = await api('POST', { action: 'create', survey: {
+        list: L.name, title: v.title, date: fmt(v.date), place: v.place, needed: v.needed, details: v.details,
+        deadline: v.deadline ? new Date(v.deadline).toISOString() : '', members } });
+      v.remoteId = j.id;
+      v.formUrl = R.url + '?s=' + j.id;
+    }catch(e){
+      toast('تعذّر إنشاء الرابط (' + e.message + '). أُنشئ الاستبيان بالرد عبر واتساب.', true);
+    }
+  }
+  S.surveys.push(v); svSel = v.id; save(); render();
+  if(v.formUrl) toast('أُنشئ الاستبيان ورابطه. انسخ الرسالة وأرسلها.');
+  else if(!remoteOn()) toast('أُنشئ الاستبيان. انسخ الرسالة وأرسلها.');
+}
+
+function svDetail(v, L){
+  const { ok, blocked } = ranked(v);
+  const open = v.status === SV_OPEN;
+  const yes = Object.keys(v.responses), no = Object.keys(v.declined || {});
+  const waiting = L.members.filter(e => !L.excluded[e] && !v.responses[e] && !(v.declined || {})[e]).length;
+  const msg = svMessage(v);
+  const willPick = ok.slice(0, v.needed).map(r => r.emp);
+  const live = !!(v.remoteId && remoteOn());
+
+  let rows = ok.map((r,i) => `<tr class="${open && willPick.includes(r.emp) ? 'pick' : ''}">
+      <td>${i+1}</td><td><b>${esc(nameOf(r.emp))}</b>${open && willPick.includes(r.emp) ? ' <span class="tag t-x">سيُسند إليه</span>' : ''}${v.assigned.includes(r.emp) ? ' <span class="tag t-a">أُسند إليه</span>' : ''}</td>
+      <td>${r.emp}</td><td>${!open ? '—' : r.p === 0 ? 'عليه الدور' : r.p + 1}</td><td>${stats(L, r.emp).count}</td>
+      <td>${esc(r.src)}${r.at && r.src === 'الرابط' ? ` <span class="note">${clock(r.at)}</span>` : ''}</td>
+      <td>${open ? `<button class="btn warn sm" onclick="svRemove('${r.emp}')">حذف</button>` : ''}</td></tr>`).join('');
+  rows += blocked.map(r => `<tr class="off"><td>—</td><td>${esc(nameOf(r.emp))}</td><td>${r.emp}</td><td colspan="3">${esc(r.block)}</td>
+      <td>${open ? `<button class="btn warn sm" onclick="svRemove('${r.emp}')">حذف</button>` : ''}</td></tr>`).join('');
+
+  const manual = `
+      <label class="f">الصق ردود السائقين من واتساب<textarea id="sv-paste" rows="3" placeholder="حدد الرسائل في المجموعة وانسخها هنا كما هي"></textarea></label>
+      <div class="actions gap">
+        <button class="btn ghost" onclick="svPaste()">استخراج الأرقام الوظيفية</button>
+        <label class="btn ghost">استيراد ملف Excel<input type="file" accept=".xlsx,.xls,.csv" hidden onchange="svImport(this)"></label>
+      </div>
+      <div class="actions gap" style="align-items:end">
+        <label class="f" style="min-width:240px">إضافة يدوية (لمن رد بالاتصال)<select id="sv-add"></select></label>
+        <button class="btn ghost" onclick="svManual()">إضافة</button>
+      </div>`;
+
+  return `<div class="box">
+      <div class="toolbar" style="margin:0"><h2 class="h" style="margin:0">${esc(v.title)} <span class="tag ${open ? 't-x' : 't-a'}">${v.status}</span></h2>
+        <button class="btn warn sm" onclick="svDelete()">حذف الاستبيان</button></div>
+      <div class="meta">${v.date ? `<span>التاريخ <b>${fmt(v.date)}</b></span>` : ''}${v.place ? `<span>المكان <b>${esc(v.place)}</b></span>` : ''}
+        <span>المطلوب <b>${v.needed}</b></span>${v.deadline ? `<span>آخر موعد <b>${fmtDT(v.deadline)}</b></span>` : ''}</div>
+    </div>
+
+    <div class="box step ${yes.length || no.length ? 'done' : ''}">
+      <h3><span class="num">1</span>أرسل الرابط إلى مجموعة السائقين</h3>
+      ${v.remoteId ? `<div class="actions" style="align-items:end;margin-bottom:12px">
+          <label class="f" style="flex:1;min-width:220px">رابط الاستبيان<input type="text" id="sv-url" dir="ltr" readonly value="${esc(linkOf(v))}" onclick="this.select()"></label>
+          <button class="btn ghost" onclick="svCopy('#sv-url','نُسخ الرابط')">نسخ الرابط</button>
+          <a class="btn ghost" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(linkOf(v))}">فتح الرابط</a>
+        </div>` : ''}
+      <label class="f">نص الرسالة<textarea class="msg" id="sv-msg" rows="13" readonly>${esc(msg)}</textarea></label>
+      <div class="actions gap">
+        <button class="btn" onclick="svCopy('#sv-msg','نُسخت الرسالة')">نسخ الرسالة</button>
+        <a class="btn ghost" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">فتح في واتساب</a>
+      </div>
+    </div>
+
+    <div class="box step ${yes.length || no.length ? 'done' : ''}">
+      <h3><span class="num">2</span>${live ? 'الردود تصل تلقائياً' : 'سجّل من أبدى استعداده'}</h3>
+      <div class="meta" style="margin:0 0 10px"><span>مستعدون <b>${yes.length}</b></span><span>معتذرون <b>${no.length}</b></span><span>لم يردّوا <b>${waiting}</b></span></div>
+      ${!open ? `<p class="note" style="margin:0">تم الإسناد وأُغلق الرابط. لتعديل القائمة ألغِ الإسناد من الأسفل.</p>`
+        : live ? `<div class="actions" style="align-items:center"><button class="btn ghost" id="sv-refresh" onclick="svSync(false)">تحديث الآن</button>
+            <span class="note" id="sv-synced" style="margin:0"></span><span class="note" style="margin:0">(يتحدث تلقائياً كل دقيقة)</span></div>
+            <details class="gap"><summary style="cursor:pointer;color:var(--green-dk)">إضافة ردود يدوياً</summary>${manual}</details>`
+        : manual + `<p class="note">يُقبل فقط الرقم الوظيفي المسجل في الكشف، وتُتجاهل الأوقات وأرقام الهواتف.</p>`}
+      ${no.length ? `<p class="note">اعتذر: ${no.map(e => esc(nameOf(e))).join('، ')}</p>` : ''}
+    </div>
+
+    <div class="box step ${open ? '' : 'done'}">
+      <h3><span class="num">3</span>المستعدون حسب أولوية الدور</h3>
+      ${yes.length ? `<div class="tw"><table><thead><tr><th>الأولوية</th><th>الاسم</th><th>الرقم الوظيفي</th><th>موقعه في الدور</th><th>مهامه</th><th>المصدر</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>` : `<p class="note" style="margin:0">لم يُسجل أي مستعد بعد.</p>`}
+      ${open && ok.length ? `
+        <div class="actions gap" style="align-items:end">
+          <label class="f" style="width:160px">رقم الطلب<input type="text" id="sv-req"></label>
+          <button class="btn big" onclick="svAssign()">إسناد المهمة إلى ${Math.min(v.needed, ok.length) === 1 ? esc(nameOf(ok[0].emp)) : 'أول ' + Math.min(v.needed, ok.length) + ' سائقين'}</button>
+        </div>
+        ${ok.length < v.needed ? `<p class="note" style="color:var(--red)">المطلوب ${v.needed} والمستعدون ${ok.length} فقط.</p>` : ''}
+        <p class="note">من يسبق المختارين في الدور ولم يُبدِ استعداده يُتخطى، تماماً كما لو اعتذر.</p>` : ''}
+      ${!open ? `<div class="actions gap"><button class="btn warn" onclick="svReopen()">إلغاء الإسناد وإعادة فتح الاستبيان</button></div>` : ''}
+    </div>`;
+}
+
+/* ----- الإجراءات ----- */
+function svAddEmps(emps, src){
+  const v = svOf(svSel); let added = 0;
+  for(const e of emps){ if(!v.responses[e]){ v.responses[e] = { src, at: Date.now() }; added++; } }
+  save(); render(); return added;
+}
+function svPaste(){
+  const text = toLatin($('#sv-paste').value);
+  const known = [...new Set(text.match(EMP_RE) || [])].filter(x => S.drivers[x]);
+  if(!known.length) return toast('لم أجد أرقاماً وظيفية مسجلة في النص', true);
+  const added = svAddEmps(known, 'واتساب');
+  $('#sv-paste').value = '';
+  toast(added ? `عدد المضافين: ${added}` : 'كل الأرقام مسجلة مسبقاً');
+}
+function svManual(){
+  const e = $('#sv-add').value; if(!e) return toast('اختر سائقاً', true);
+  svAddEmps([e], 'يدوي'); toast(`أُضيف ${nameOf(e)}`);
+}
+async function svImport(input){
+  const f = input.files[0]; input.value = ''; if(!f) return;
+  if(typeof XLSX === 'undefined') return toast('مكتبة Excel لم تُحمَّل. تحقق من الاتصال بالإنترنت.', true);
+  try{
+    const wb = XLSX.read(await f.arrayBuffer());
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+    const head = (rows[0] || []).map(String);
+    const ei = head.findIndex(h => /وظيف|employee|staff/i.test(h));
+    const ai = head.findIndex(h => /مستعد|استعداد|ready|available|willing/i.test(h));
+    const found = new Set();
+    for(const r of rows.slice(1)){
+      if(ai >= 0 && !/^\s*(نعم|yes|موافق|مستعد)/i.test(String(r[ai]))) continue;
+      for(const c of (ei >= 0 ? [r[ei]] : r)) (toLatin(c).match(EMP_RE) || []).forEach(x => S.drivers[x] && found.add(x));
+    }
+    if(!found.size) return toast('لم أجد أرقاماً وظيفية مسجلة في الملف', true);
+    const added = svAddEmps([...found], 'ملف');
+    toast(`عدد المضافين من الملف: ${added}` + (ai < 0 ? '. لم أجد عمود الاستعداد، فاعتُبر كل من في الملف مستعداً' : ''));
+  }catch(e){ toast('تعذّرت قراءة الملف', true); }
+}
+function svRemove(emp){
+  const v = svOf(svSel);
+  if(v.responses[emp] && v.responses[emp].src === 'الرابط'){ v.removed = v.removed || {}; v.removed[emp] = Date.now(); }
+  delete v.responses[emp]; save(); render();
+}
+function svCopy(sel, done){
+  const t = $(sel);
+  (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject())
+    .then(() => toast(done))
+    .catch(() => { t.select(); document.execCommand('copy'); toast(done); });
+}
+async function svAssign(){
+  const req = $('#sv-req').value.trim();
+  const v = svOf(svSel);
+  if(v.remoteId && remoteOn()) await svSync(true);            // آخر الردود قبل الاختيار
+  const { ok } = ranked(v), pick = ok.slice(0, v.needed);
+  if(!pick.length) return toast('لا يوجد مستعد قابل للإسناد', true);
+  modal('تأكيد الإسناد', `<p style="margin:0">ستُسند مهمة «${esc(v.title)}» إلى:</p><p style="margin:6px 0 0"><b>${pick.map(r => esc(nameOf(r.emp))).join('، ')}</b></p>
+    <p class="note">ويتحرك الدور في الكشف إلى ما بعد ${esc(nameOf(pick[pick.length-1].emp))}${v.remoteId ? '، ويُغلق الرابط' : ''}.</p>`, 'إسناد', () => {
+    const base = Date.now();
+    pick.forEach((r,i) => S.log.push({ id: uid(), listId: v.listId, emp: r.emp, name: nameOf(r.emp), type: T.A, reqNo: req,
+      date: v.date || todayISO(), note: 'عبر استبيان: ' + v.title, createdAt: base + i, surveyId: v.id }));
+    v.status = SV_DONE; v.assigned = pick.map(r => r.emp);
+    save(); render(); remoteStatus(v, 'مغلق'); toast('تم الإسناد وسُجل في السجل');
+  });
+}
+function svReopen(){
+  const v = svOf(svSel);
+  modal('إعادة فتح الاستبيان', `<p style="margin:0">سيُلغى إسناد هذه المهمة من السجل، ويعود الدور كما كان قبلها${v.remoteId ? '، ويُفتح الرابط من جديد' : ''}.</p>`, 'إلغاء الإسناد', () => {
+    S.log.forEach(e => { if(e.surveyId === v.id && !e.cancelled) e.cancelled = Date.now(); });
+    v.status = SV_OPEN; v.assigned = []; save(); render(); remoteStatus(v, 'مفتوح'); toast('أُعيد فتح الاستبيان');
+  });
+}
+function svDelete(){
+  const v = svOf(svSel);
+  modal('حذف الاستبيان', `<p style="margin:0">سيُحذف الاستبيان وردوده${v.remoteId ? '، ويتوقف الرابط' : ''}.${v.status === SV_DONE ? ' يبقى الإسناد الذي تم عبره مسجلاً في السجل.' : ''}</p>`, 'حذف', () => {
+    remoteStatus(v, 'محذوف');
+    S.surveys = S.surveys.filter(x => x.id !== v.id); svSel = null; save(); render(); toast('حُذف الاستبيان');
+  });
+}
+
+/* ===== تشغيل ===== */
+function render(){ renderLists(); renderTurn(); renderRoster(); renderSurveys(); renderLog(); }
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === b));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + b.dataset.tab));
+  if(b.dataset.tab === 'survey') svSync(true);
+});
+render();
+svSync(true);
+</script>
+</body>
+</html>
